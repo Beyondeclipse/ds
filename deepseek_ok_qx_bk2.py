@@ -32,8 +32,7 @@ exchange = ccxt.okx({
 TRADE_CONFIG = {
     'symbol': 'BTC/USDT:USDT',  # OKX的合约符号格式
     'leverage': 10,  # 杠杆倍数,只影响保证金不影响下单价值
-    'baseTimeFrame': 15,    # 默认为15分钟信号线为基准，其他选择将同时扩展数据
-    'settingTimeframe': 3,  # 使用15分钟K线，还可选 5m,3m,1m
+    'timeframe': '15m',  # 使用15分钟K线
     'test_mode': False,  # 测试模式
     'data_points': 96,  # 24小时数据（96根15分钟K线）
     'analysis_periods': {
@@ -53,7 +52,7 @@ TRADE_CONFIG = {
     }
 }
 
-#设置交易所参数 - 强制全仓模式
+
 def setup_exchange():
     """设置交易所参数 - 强制全仓模式"""
     try:
@@ -66,13 +65,6 @@ def setup_exchange():
         # 获取合约乘数
         contract_size = float(btc_market['contractSize'])
         print(f"✅ 合约规格: 1张 = {contract_size} BTC")
-
-        # 设定时间帧（K线间隔）
-        TRADE_CONFIG['timeframe'] = str(int(TRADE_CONFIG['settingTimeframe'])) + 'm'
-        # 计算因子 baseTimeFrame / settingTimeframe
-        TRADE_CONFIG['factor'] = TRADE_CONFIG['baseTimeFrame'] / TRADE_CONFIG['settingTimeframe']
-        # 重设置获取K线数量
-        TRADE_CONFIG['data_points'] = int(TRADE_CONFIG['data_points'] * TRADE_CONFIG['factor'])
 
         # 存储合约规格到全局配置
         TRADE_CONFIG['contract_size'] = contract_size
@@ -161,7 +153,7 @@ price_history = []
 signal_history = []
 position = None
 
-#计算智能仓位大小 - 修复版
+
 def calculate_intelligent_position(signal_data, price_data, current_position):
     """计算智能仓位大小 - 修复版"""
     config = TRADE_CONFIG['position_management']
@@ -245,7 +237,7 @@ def calculate_intelligent_position(signal_data, price_data, current_position):
                     price_data['price'] * TRADE_CONFIG.get('contract_size', 0.01))
         return round(max(contract_size, TRADE_CONFIG.get('min_amount', 0.01)), 2)
 
-#计算技术指标 - 来自第一个策略
+
 def calculate_technical_indicators(df):
     """计算技术指标 - 来自第一个策略"""
     try:
@@ -291,7 +283,7 @@ def calculate_technical_indicators(df):
         print(f"技术指标计算失败: {e}")
         return df
 
-#计算支撑阻力位
+
 def get_support_resistance_levels(df, lookback=20):
     """计算支撑阻力位"""
     try:
@@ -318,7 +310,7 @@ def get_support_resistance_levels(df, lookback=20):
         print(f"支撑阻力计算失败: {e}")
         return {}
 
-#获取情绪指标 - 简洁版本
+
 def get_sentiment_indicators():
     """获取情绪指标 - 简洁版本"""
     try:
@@ -393,7 +385,7 @@ def get_sentiment_indicators():
         print(f"情绪指标获取失败: {e}")
         return None
 
-#判断市场趋势
+
 def get_market_trend(df):
     """判断市场趋势"""
     try:
@@ -425,7 +417,7 @@ def get_market_trend(df):
         print(f"趋势分析失败: {e}")
         return {}
 
-#增强版：获取BTC K线数据并计算技术指标
+
 def get_btc_ohlcv_enhanced():
     """增强版：获取BTC K线数据并计算技术指标"""
     try:
@@ -444,9 +436,7 @@ def get_btc_ohlcv_enhanced():
 
         # 获取技术分析数据
         trend_analysis = get_market_trend(df)
-        # 跟随配置因子变化
-        lookback = int(20 * TRADE_CONFIG['factor'])
-        levels_analysis = get_support_resistance_levels(df, lookback)
+        levels_analysis = get_support_resistance_levels(df)
 
         return {
             'price': current_data['close'],
@@ -478,7 +468,7 @@ def get_btc_ohlcv_enhanced():
         print(f"获取增强K线数据失败: {e}")
         return None
 
-#成技术分析文本
+
 def generate_technical_analysis_text(price_data):
     """生成技术分析文本"""
     if 'technical_data' not in price_data:
@@ -518,7 +508,7 @@ def generate_technical_analysis_text(price_data):
     """
     return analysis_text
 
-#获取当前持仓情况 - OKX版本
+
 def get_current_position():
     """获取当前持仓情况 - OKX版本"""
     try:
@@ -549,7 +539,7 @@ def get_current_position():
         traceback.print_exc()
         return None
 
-#安全解析JSON，处理格式不规范的情况
+
 def safe_json_parse(json_str):
     """安全解析JSON，处理格式不规范的情况"""
     try:
@@ -567,7 +557,7 @@ def safe_json_parse(json_str):
             print(f"错误详情: {e}")
             return None
 
-#创建备用交易信号 - HOLD
+
 def create_fallback_signal(price_data):
     """创建备用交易信号"""
     return {
@@ -579,17 +569,16 @@ def create_fallback_signal(price_data):
         "is_fallback": True
     }
 
-#使用DeepSeek分析市场并生成交易信号（增强版）
+
 def analyze_with_deepseek(price_data):
     """使用DeepSeek分析市场并生成交易信号（增强版）"""
 
     # 生成技术分析文本
     technical_analysis = generate_technical_analysis_text(price_data)
 
-    # 构建K线数据文本，按因子放大
-    num = int(5 * TRADE_CONFIG['factor'])
-    kline_text = f"【最近{num}根{TRADE_CONFIG['timeframe']}K线数据】\n"
-    for i, kline in enumerate(price_data['kline_data'][-num:]):
+    # 构建K线数据文本
+    kline_text = f"【最近5根{TRADE_CONFIG['timeframe']}K线数据】\n"
+    for i, kline in enumerate(price_data['kline_data'][-5:]):
         trend = "阳线" if kline['close'] > kline['open'] else "阴线"
         change = ((kline['close'] - kline['open']) / kline['open']) * 100
         kline_text += f"K线{i + 1}: {trend} 开盘:{kline['open']:.2f} 收盘:{kline['close']:.2f} 涨跌:{change:+.2f}%\n"
@@ -617,7 +606,7 @@ def analyze_with_deepseek(price_data):
     pnl_text = f", 持仓盈亏: {current_pos['unrealized_pnl']:.2f} USDT" if current_pos else ""
 
     prompt = f"""
-    你是一个专业且成功的加密货币交易分析师。请基于以下BTC/USDT {TRADE_CONFIG['timeframe']}周期数据进行分析：
+    你是一个专业的加密货币交易分析师。请基于以下BTC/USDT {TRADE_CONFIG['timeframe']}周期数据进行分析：
 
     {kline_text}
 
@@ -707,7 +696,7 @@ def analyze_with_deepseek(price_data):
             model="deepseek-chat",
             messages=[
                 {"role": "system",
-                 "content": f"您是一位专业且成功的交易员，专注于{TRADE_CONFIG['timeframe']}周期趋势分析。请结合K线形态和技术指标做出判断，并严格遵循JSON格式要求。"},
+                 "content": f"您是一位专业的交易员，专注于{TRADE_CONFIG['timeframe']}周期趋势分析。请结合K线形态和技术指标做出判断，并严格遵循JSON格式要求。"},
                 {"role": "user", "content": prompt}
             ],
             stream=False,
@@ -759,7 +748,7 @@ def analyze_with_deepseek(price_data):
         print(f"DeepSeek分析失败: {e}")
         return create_fallback_signal(price_data)
 
-#执行智能交易 - OKX版本（支持同方向加仓减仓）
+
 def execute_intelligent_trade(signal_data, price_data):
     """执行智能交易 - OKX版本（支持同方向加仓减仓）"""
     global position
@@ -984,7 +973,7 @@ def execute_intelligent_trade(signal_data, price_data):
         import traceback
         traceback.print_exc()
 
-#带重试的DeepSeek分析
+
 def analyze_with_deepseek_with_retry(price_data, max_retries=2):
     """带重试的DeepSeek分析"""
     for attempt in range(max_retries):
@@ -1004,7 +993,7 @@ def analyze_with_deepseek_with_retry(price_data, max_retries=2):
 
     return create_fallback_signal(price_data)
 
-#等待到下一个15分钟整点
+
 def wait_for_next_period():
     """等待到下一个15分钟整点"""
     now = datetime.now()
@@ -1012,8 +1001,7 @@ def wait_for_next_period():
     current_second = now.second
 
     # 计算下一个整点时间（00, 15, 30, 45分钟）
-    settingMinute = TRADE_CONFIG['settingTimeframe'] 
-    next_period_minute = ((current_minute // settingMinute) + 1) * settingMinute
+    next_period_minute = ((current_minute // 15) + 1) * 15
     if next_period_minute == 60:
         next_period_minute = 0
 
@@ -1039,9 +1027,9 @@ def wait_for_next_period():
 
 def trading_bot():
     # 等待到整点再执行
-    # wait_seconds = wait_for_next_period()
-    # if wait_seconds > 0:
-    #     time.sleep(wait_seconds)
+    wait_seconds = wait_for_next_period()
+    if wait_seconds > 0:
+        time.sleep(wait_seconds)
 
     """主交易机器人函数"""
     print("\n" + "=" * 60)
@@ -1077,7 +1065,7 @@ def main():
     else:
         print("实盘交易模式，请谨慎操作！")
 
-    print(f"交易周期: {TRADE_CONFIG['settingTimeframe']}m")
+    print(f"交易周期: {TRADE_CONFIG['timeframe']}")
     print("已启用完整技术指标分析和持仓跟踪功能")
 
     # 设置交易所
