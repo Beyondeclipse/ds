@@ -1039,9 +1039,9 @@ def wait_for_next_period():
 
 def trading_bot():
     # 等待到整点再执行
-    # wait_seconds = wait_for_next_period()
-    # if wait_seconds > 0:
-    #     time.sleep(wait_seconds)
+    wait_seconds = wait_for_next_period()
+    if wait_seconds > 0:
+        time.sleep(wait_seconds)
 
     """主交易机器人函数"""
     print("\n" + "=" * 60)
