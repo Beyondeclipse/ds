@@ -169,8 +169,10 @@ def calculate_intelligent_position(signal_data, price_data, current_position):
         balance = exchange.fetch_balance()
         usdt_balance = balance['USDT']['free']
 
+        # TODO 投入基数修改为余额
         # 基础USDT投入
-        base_usdt = config['base_usdt_amount']
+        # base_usdt = config['base_usdt_amount']
+        base_usdt = usdt_balance
         print(f"💰 可用USDT余额: {usdt_balance:.2f}, 下单基数{base_usdt}")
 
         # 根据信心程度调整 - 修复这里
