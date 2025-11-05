@@ -454,12 +454,12 @@ def get_btc_ohlcv_enhanced():
         df = calculate_technical_indicators(df)
 
         # 打印指标数据df['sma_5']
-        print(df['sma_5'])
+        # print(df['sma_5'])
 
         current_data = df.iloc[-1]
         previous_data = df.iloc[-2]
-        print(f"当前值: {current_data}")
-        print(f"前一值: {previous_data}")
+        # print(f"当前值: {current_data}")
+        # print(f"前一值: {previous_data}")
 
         # 获取技术分析数据
         trend_analysis = get_market_trend(df)
