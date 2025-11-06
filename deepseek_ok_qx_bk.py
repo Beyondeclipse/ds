@@ -46,12 +46,13 @@ TRADE_CONFIG = {
     'leverage': 10,  # 杠杆倍数,只影响保证金不影响下单价值
     'baseTimeFrame': 15,    # 默认为15分钟信号线为基准，其他选择将同时扩展数据
     'settingTimeframe': 3,  # 使用15分钟K线，还可选 5m,3m,1m
-    'test_mode': False,  # 测试模式
-    'data_points': 96*3,  # 24*3小时数据（96根15分钟K线）
+    'test_mode': False,     # 测试模式
+    'data_points': 96*3,    # 24*3小时数据（96根15分钟K线）
+    'kline_num': 20,        # K线数量
     'analysis_periods': {
-        'short_term': 20,  # 短期均线
+        'short_term': 20,   # 短期均线
         'medium_term': 50,  # 中期均线
-        'long_term': 96  # 长期趋势
+        'long_term': 96     # 长期趋势
     },
     # 新增智能仓位参数
     'position_management': {
@@ -85,6 +86,8 @@ def setup_exchange():
         TRADE_CONFIG['factor'] = TRADE_CONFIG['baseTimeFrame'] / TRADE_CONFIG['settingTimeframe']
         # 重设置获取K线数量
         TRADE_CONFIG['data_points'] = int(TRADE_CONFIG['data_points'] * TRADE_CONFIG['factor'])
+        # 重设置k线数量
+        TRADE_CONFIG['kline_num'] = int(TRADE_CONFIG['data_points'] * TRADE_CONFIG['factor'])
 
         # 存储合约规格到全局配置
         TRADE_CONFIG['contract_size'] = contract_size
@@ -483,7 +486,7 @@ def get_btc_ohlcv_enhanced():
             'volume': current_data['volume'],
             'timeframe': TRADE_CONFIG['timeframe'],
             'price_change': ((current_data['close'] - previous_data['close']) / previous_data['close']) * 100,
-            'kline_data': df[['timestamp', 'open', 'high', 'low', 'close', 'volume']].tail(10).to_dict('records'),
+            'kline_data': df[['timestamp', 'open', 'high', 'low', 'close', 'volume']].tail(TRADE_CONFIG['kline_num']).to_dict('records'),
             'technical_data': {
                 'sma_3': current_data.get('sma_3', 0),
                 'sma_5': current_data.get('sma_5', 0),
@@ -621,7 +624,7 @@ def analyze_with_deepseek(price_data):
     technical_analysis = generate_technical_analysis_text(price_data)
 
     # 构建K线数据文本，按因子放大
-    num = int(5 * TRADE_CONFIG['factor'])
+    num = TRADE_CONFIG['kline_num']
     kline_text = f"【最近{num}根{TRADE_CONFIG['timeframe']}K线数据】\n"
     for i, kline in enumerate(price_data['kline_data'][-num:]):
         trend = "阳线" if kline['close'] > kline['open'] else "阴线"
