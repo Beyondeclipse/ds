@@ -46,7 +46,7 @@ TRADE_CONFIG = {
     'leverage': 10,  # 杠杆倍数,只影响保证金不影响下单价值
     'baseTimeFrame': 15,    # 默认为15分钟信号线为基准，其他选择将同时扩展数据
     'settingTimeframe': 3,  # 使用15分钟K线，还可选 5m,3m,1m
-    'test_mode': True,     # 测试模式
+    'test_mode': False,     # 测试模式
     'data_points': 96*3,    # 24*3小时数据（96根15分钟K线）
     'kline_num': 20,        # K线数量
     'analysis_periods': {
@@ -1432,9 +1432,9 @@ def wait_for_next_period():
 
 def trading_bot():
     # 等待到整点再执行
-    # wait_seconds = wait_for_next_period()
-    # if wait_seconds > 0:
-    #     time.sleep(wait_seconds)
+    wait_seconds = wait_for_next_period()
+    if wait_seconds > 0:
+        time.sleep(wait_seconds)
 
     """主交易机器人函数"""
     print("\n" + "=" * 60)
@@ -1481,8 +1481,8 @@ def main():
     print(f"执行频率: 每{TRADE_CONFIG['settingTimeframe']}分钟整点执行")
 
     # 循环执行（不使用schedule）
-    # while True:
-    trading_bot()  # 函数内部会自己等待整点
+    while True:
+        trading_bot()  # 函数内部会自己等待整点
 
 
 
