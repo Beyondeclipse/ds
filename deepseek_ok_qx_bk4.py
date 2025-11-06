@@ -47,7 +47,7 @@ TRADE_CONFIG = {
     'baseTimeFrame': 15,    # 默认为15分钟信号线为基准，其他选择将同时扩展数据
     'settingTimeframe': 3,  # 使用15分钟K线，还可选 5m,3m,1m
     'test_mode': False,  # 测试模式
-    'data_points': 96*3,  # 24*3小时数据（96根15分钟K线）
+    'data_points': 96,  # 24小时数据（96根15分钟K线）
     'analysis_periods': {
         'short_term': 20,  # 短期均线
         'medium_term': 50,  # 中期均线
@@ -210,7 +210,7 @@ def calculate_intelligent_position(signal_data, price_data, current_position):
             trend_multiplier = 1.0
 
         # 根据RSI状态调整（超买超卖区域减仓）
-        rsi = price_data['technical_data'].get('rsi_14', 50)
+        rsi = price_data['technical_data'].get('rsi', 50)
         if rsi > 75 or rsi < 25:
             rsi_multiplier = 0.7
         else:
@@ -270,25 +270,17 @@ def calculate_technical_indicators(df):
 
         # 指数移动平均线
         df['ema_12'] = df['close'].ewm(span=12).mean()
-        df['ema_20'] = df['close'].ewm(span=20).mean()
         df['ema_26'] = df['close'].ewm(span=26).mean()
-        df['ema_50'] = df['close'].ewm(span=50).mean()
         df['macd'] = df['ema_12'] - df['ema_26']
         df['macd_signal'] = df['macd'].ewm(span=9).mean()
         df['macd_histogram'] = df['macd'] - df['macd_signal']
 
         # 相对强弱指数 (RSI)
         delta = df['close'].diff()
-
-        # RSI7 - 短周期，更敏感
-        df['rsi_7'] = 100 - (100 / (1 + 
-            (delta.where(delta > 0, 0)).rolling(7).mean() / 
-                (-delta.where(delta < 0, 0)).rolling(7).mean()))
-
-        # RSI14 - 标准周期
-        df['rsi_14'] = 100 - (100 / (1 + 
-            (delta.where(delta > 0, 0)).rolling(14).mean() / 
-            (-delta.where(delta < 0, 0)).rolling(14).mean()))
+        gain = (delta.where(delta > 0, 0)).rolling(14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+        rs = gain / loss
+        df['rsi'] = 100 - (100 / (1 + rs))
 
         # 布林带
         df['bb_middle'] = df['close'].rolling(20).mean()
@@ -441,7 +433,7 @@ def get_market_trend(df):
             'medium_term': trend_medium,
             'macd': macd_trend,
             'overall': overall_trend,
-            'rsi_level': df['rsi_14'].iloc[-1]
+            'rsi_level': df['rsi'].iloc[-1]
         }
     except Exception as e:
         print(f"趋势分析失败: {e}")
@@ -490,10 +482,7 @@ def get_btc_ohlcv_enhanced():
                 'sma_10': current_data.get('sma_10', 0),
                 'sma_20': current_data.get('sma_20', 0),
                 'sma_50': current_data.get('sma_50', 0),
-                'ema_20': current_data.get('ema_20', 0),
-                'ema_50': current_data.get('ema_50', 0),
-                'rsi_7': current_data.get('rsi_7', 0),
-                'rsi_14': current_data.get('rsi_14', 0),
+                'rsi': current_data.get('rsi', 0),
                 'macd': current_data.get('macd', 0),
                 'macd_signal': current_data.get('macd_signal', 0),
                 'macd_histogram': current_data.get('macd_histogram', 0),
@@ -540,7 +529,7 @@ def generate_technical_analysis_text(price_data):
     - MACD方向: {trend.get('macd', 'N/A')}
 
     📊 动量指标:
-    - RSI: {safe_float(tech['rsi_14']):.2f} ({'超买' if safe_float(tech['rsi_14']) > 70 else '超卖' if safe_float(tech['rsi_14']) < 30 else '中性'})
+    - RSI: {safe_float(tech['rsi']):.2f} ({'超买' if safe_float(tech['rsi']) > 70 else '超卖' if safe_float(tech['rsi']) < 30 else '中性'})
     - MACD: {safe_float(tech['macd']):.4f}
     - 信号线: {safe_float(tech['macd_signal']):.4f}
 
@@ -1005,7 +994,7 @@ def analyze_with_deepseek(price_data):
     【当前技术状况分析】
     - 整体趋势: {price_data['trend_analysis'].get('overall', 'N/A')}
     - 短期趋势: {price_data['trend_analysis'].get('short_term', 'N/A')} 
-    - RSI状态: {price_data['technical_data'].get('rsi_14', 0):.1f} ({'超买' if price_data['technical_data'].get('rsi_14', 0) > 70 else '超卖' if price_data['technical_data'].get('rsi_14', 0) < 30 else '中性'})
+    - RSI状态: {price_data['technical_data'].get('rsi', 0):.1f} ({'超买' if price_data['technical_data'].get('rsi', 0) > 70 else '超卖' if price_data['technical_data'].get('rsi', 0) < 30 else '中性'})
     - MACD方向: {price_data['trend_analysis'].get('macd', 'N/A')}
 
     
