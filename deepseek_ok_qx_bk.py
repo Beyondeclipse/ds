@@ -46,7 +46,7 @@ TRADE_CONFIG = {
     'leverage': 10,  # 杠杆倍数,只影响保证金不影响下单价值
     'baseTimeFrame': 15,    # 默认为15分钟信号线为基准，其他选择将同时扩展数据
     'settingTimeframe': 3,  # 使用15分钟K线，还可选 5m,3m,1m
-    'test_mode': False,     # 测试模式
+    'test_mode': True,     # 测试模式
     'data_points': 96*3,    # 24*3小时数据（96根15分钟K线）
     'kline_num': 20,        # K线数量
     'analysis_periods': {
@@ -567,12 +567,15 @@ def get_current_position():
 
                 if contracts > 0:
                     position_info = {
+                        'posId': pos['id'],  # 仓位ID
                         'side': pos['side'],  # 'long' or 'short'
                         'size': contracts,
                         'entry_price': float(pos['entryPrice']) if pos['entryPrice'] else 0,
                         'unrealized_pnl': float(pos['unrealizedPnl']) if pos['unrealizedPnl'] else 0,
                         'leverage': float(pos['leverage']) if pos['leverage'] else TRADE_CONFIG['leverage'],
-                        'symbol': pos['symbol']
+                        'symbol': pos['symbol'],
+                        'margin': float(pos['initialMargin']) if pos['initialMargin'] else 0,  # 保证金
+                        'percentage': float(pos['percentage'])/100 if pos['percentage'] else 0  # 盈亏比例
                     }
                     print(f"检测到持仓: {position_info}")  # 添加调试信息
                     return position_info
@@ -616,6 +619,57 @@ def create_fallback_signal(price_data):
         "is_fallback": True
     }
 
+max_profit_position = None
+max_loss_position = None
+# 计算当前持仓历史盈利最大持仓数据，以及历史亏损最大持仓数据，由当前持仓数据计算
+def update_max_positions(current_position):
+    global max_profit_position
+    global max_loss_position
+
+    """更新最大盈利和最大亏损持仓数据"""    
+    # 如果当前无持仓，直接返回
+    if not current_position:
+        return
+    
+    current_pnl = current_position['unrealized_pnl']
+    current_pos_id = current_position.get('posId', '')
+    
+    # 更新最大盈利持仓（仅当当前持仓盈利时）
+    if current_pnl > 0:
+        if max_profit_position is None:
+            # 首次记录盈利持仓
+            max_profit_position = current_position.copy()
+            print(f"📈 首次记录最大盈利持仓: {max_profit_position}")
+        else:
+            max_profit_pos_id = max_profit_position.get('posId', '')
+            
+            if current_pos_id != max_profit_pos_id:
+                # posId不同，用当前持仓代替
+                max_profit_position = current_position.copy()
+                print(f"📈 持仓已改变，更新最大盈利持仓: {max_profit_position} ")
+            elif current_pnl > max_profit_position['unrealized_pnl']:
+                # posId相同且当前盈利大于历史最大盈利
+                print(f"📈 更新最大盈利持仓: {current_pnl:.2f} USDT, 比例:{current_position['percentage']} (之前: {max_profit_position['unrealized_pnl']:.2f} USDT), 比例:{max_profit_position['percentage']}")
+                max_profit_position = current_position.copy()
+                
+    # 更新最大亏损持仓（仅当当前持仓亏损时）
+    if current_pnl < 0:
+        if max_loss_position is None:
+            # 首次记录亏损持仓
+            max_loss_position = current_position.copy()
+            print(f"📉 首次记录最大亏损持仓: {max_loss_position}")
+        else:
+            max_loss_pos_id = max_loss_position.get('posId', '')
+            
+            if current_pos_id != max_loss_pos_id:
+                # posId不同，用当前持仓代替
+                max_loss_position = current_position.copy()
+                print(f"📉 持仓已改变，更新最大亏损持仓: {max_loss_position}")
+            elif current_pnl < max_loss_position['unrealized_pnl']:
+                # posId相同且当前亏损小于历史最大亏损(负数更小)
+                print(f"📉 更新最大亏损持仓: {current_pnl:.2f} USDT, 比例:{current_position['percentage']} (之前: {max_loss_position['unrealized_pnl']:.2f} USDT), 比例:{max_loss_position['percentage']}")
+                max_loss_position = current_position.copy()
+
 #使用DeepSeek分析市场并生成交易信号（增强版）
 def analyze_with_deepseek(price_data):
     """使用DeepSeek分析市场并生成交易信号（增强版）"""
@@ -650,8 +704,25 @@ def analyze_with_deepseek(price_data):
 
     # 添加当前持仓信息
     current_pos = get_current_position()
-    position_text = "无持仓" if not current_pos else f"{current_pos['side']}仓, 数量: {current_pos['size']}, 盈亏: {current_pos['unrealized_pnl']:.2f}USDT"
-    pnl_text = f", 持仓盈亏: {current_pos['unrealized_pnl']:.2f} USDT" if current_pos else ""
+    position_text = "无持仓" if not current_pos else f"{current_pos['side']}仓, 数量: {current_pos['size']}"
+    pnl_text = f", 持仓盈亏: {current_pos['unrealized_pnl']} USDT" if current_pos else ""
+    margin = f", 保证金: {current_pos['margin']} USDT" if current_pos else ""
+    percentage = f", 盈亏比例: {current_pos['percentage']}" if current_pos else ""
+
+    # 调用函数更新最大持仓数据
+    update_max_positions(current_pos)
+    # 构建最大持仓信息文本
+    max_profit_text = "无"
+    max_loss_text = "无"
+
+    if max_profit_position:
+        max_profit_text = f"{max_profit_position['side']}仓, 数量: {max_profit_position['size']}, 盈亏: {max_profit_position['unrealized_pnl']} USDT, 保证金: {max_profit_position['margin']} USDT, 盈亏比例: {max_profit_position['percentage']}"
+
+    if max_loss_position:
+        max_loss_text = f"{max_loss_position['side']}仓, 数量: {max_loss_position['size']}, 盈亏: {max_loss_position['unrealized_pnl']} USDT, 保证金: {max_loss_position['margin']} USDT, 盈亏比例: {max_loss_position['percentage']}%"
+    print(f'当前持仓: {position_text}{pnl_text}{margin}{percentage}')
+    print(f'历史最大盈利持仓方向: {max_profit_text}')
+    print(f'历史最大亏损持仓方向: {max_loss_text}')
 
     prompt = f"""
 ## 🎯 核心分析哲学
@@ -1003,15 +1074,16 @@ def analyze_with_deepseek(price_data):
     - 本K线最低: ${price_data['low']:,.2f}
     - 本K线成交量: {price_data['volume']:.2f} BTC
     - 价格变化: {price_data['price_change']:+.2f}%
-    - 当前持仓: {position_text}{pnl_text}
+    - 当前持仓: {position_text}{pnl_text}{margin}{percentage}
+    - 历史最大盈利持仓方向: {max_profit_text}
+    - 历史最大亏损持仓方向: {max_loss_text}
 
     【当前技术状况分析】
     - 整体趋势: {price_data['trend_analysis'].get('overall', 'N/A')}
     - 短期趋势: {price_data['trend_analysis'].get('short_term', 'N/A')} 
     - RSI状态: {price_data['technical_data'].get('rsi_14', 0):.1f} ({'超买' if price_data['technical_data'].get('rsi_14', 0) > 70 else '超卖' if price_data['technical_data'].get('rsi_14', 0) < 30 else '中性'})
     - MACD方向: {price_data['trend_analysis'].get('macd', 'N/A')}
-
-    
+   
 
     请用以下JSON格式回复：
     {{
@@ -1360,9 +1432,9 @@ def wait_for_next_period():
 
 def trading_bot():
     # 等待到整点再执行
-    wait_seconds = wait_for_next_period()
-    if wait_seconds > 0:
-        time.sleep(wait_seconds)
+    # wait_seconds = wait_for_next_period()
+    # if wait_seconds > 0:
+    #     time.sleep(wait_seconds)
 
     """主交易机器人函数"""
     print("\n" + "=" * 60)
@@ -1409,8 +1481,8 @@ def main():
     print(f"执行频率: 每{TRADE_CONFIG['settingTimeframe']}分钟整点执行")
 
     # 循环执行（不使用schedule）
-    while True:
-        trading_bot()  # 函数内部会自己等待整点
+    # while True:
+    trading_bot()  # 函数内部会自己等待整点
 
 
 
