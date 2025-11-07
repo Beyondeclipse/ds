@@ -1149,7 +1149,8 @@ def analyze_with_deepseek(price_data):
         "reason": "简要分析理由(包含趋势判断和技术依据)",
         "stop_loss": 具体价格,
         "take_profit": 具体价格, 
-        "confidence": "HIGH|MEDIUM|LOW"
+        "confidence": "HIGH|MEDIUM|LOW",
+        "technical_data_suggest"："简要说明对prompt中提供的数据是否足够，欠缺或有冗余（如历史数据是否足够，是否过多导致成本上升等）"
     }}
     """
 
