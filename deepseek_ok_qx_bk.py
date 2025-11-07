@@ -461,7 +461,7 @@ def get_btc_ohlcv_enhanced():
         df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
         # 获取df数据量
-        print(f"获取到K线数据量: {df.shape[0]}")
+        print(f"获取到({TRADE_CONFIG['symbol']}) {TRADE_CONFIG['timeframe']}K线数据量: {df.shape[0]}/{TRADE_CONFIG['data_points']}")
 
         # 计算技术指标
         df = calculate_technical_indicators(df)
@@ -708,7 +708,7 @@ def calc_drawdown(current_pos):
             # 回撤比例 = 回撤金额 / 历史最大盈利金额
             if max_profit_position['unrealized_pnl'] != 0:
                 drawdown_percentage = (drawdown_amount / max_profit_position['unrealized_pnl']) * 100
-                drawdown_text = f", 回撤: {drawdown_amount:.2f} USDT ({drawdown_percentage:.2f}%)"
+                drawdown_text = f" 回撤: {drawdown_amount:.2f} USDT ({drawdown_percentage:.2f}%)"
     
     # 如果只有最大亏损持仓记录
     elif current_pos and max_loss_position and not max_profit_position:
@@ -720,7 +720,7 @@ def calc_drawdown(current_pos):
             recovery_amount = current_pos['unrealized_pnl'] - max_loss_position['unrealized_pnl']
             if max_loss_position['unrealized_pnl'] != 0:
                 recovery_percentage = (recovery_amount / abs(max_loss_position['unrealized_pnl'])) * 100
-                drawdown_text = f", 从最大亏损回升: {recovery_amount:.2f} USDT ({recovery_percentage:.2f}%)"
+                drawdown_text = f" 从最大亏损回升: {recovery_amount:.2f} USDT ({recovery_percentage:.2f}%)"
     
     return drawdown_text
 
