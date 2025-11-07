@@ -540,19 +540,11 @@ def generate_technical_analysis_text(price_data):
     analysis_text = f"""
     【技术指标分析】
     📈 移动平均线:
-    - 3周期({3*base_tf}m): {safe_float(tech['sma_3']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_3'])) / safe_float(tech['sma_3']) * 100:+.2f}%
-    - 5周期({5*base_tf}m): {safe_float(tech['sma_5']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_5'])) / safe_float(tech['sma_5']) * 100:+.2f}%
-    - 10周期({10*base_tf}m): {safe_float(tech['sma_10']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_10'])) / safe_float(tech['sma_10']) * 100:+.2f}%
-    - 15周期({15*base_tf}m): {safe_float(tech['sma_15']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_15'])) / safe_float(tech['sma_15']) * 100:+.2f}%
-    - 20周期({20*base_tf}m): {safe_float(tech['sma_20']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_20'])) / safe_float(tech['sma_20']) * 100:+.2f}%
-    - 50周期({50*base_tf}m): {safe_float(tech['sma_50']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_50'])) / safe_float(tech['sma_50']) * 100:+.2f}%
-    - 80周期({80*base_tf}m): {safe_float(tech['sma_80']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_80'])) / safe_float(tech['sma_80']) * 100:+.2f}%
-
-    📈 指数移动平均线:
-    - 12周期({12*base_tf}m): {safe_float(tech['ema_12']):.2f}
-    - 20周期({20*base_tf}m): {safe_float(tech['ema_20']):.2f}
-    - 26周期({26*base_tf}m): {safe_float(tech['ema_26']):.2f}
-    - 50周期({50*base_tf}m): {safe_float(tech['ema_50']):.2f}
+    - 3周期({3*base_tf}分钟均线): {safe_float(tech['sma_3']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_3'])) / safe_float(tech['sma_3']) * 100:+.2f}%
+    - 5周期({5*base_tf}分钟均线): {safe_float(tech['sma_5']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_5'])) / safe_float(tech['sma_5']) * 100:+.2f}%
+    - 10周期({10*base_tf}分钟均线): {safe_float(tech['sma_10']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_10'])) / safe_float(tech['sma_10']) * 100:+.2f}%
+    - 20周期({20*base_tf}分钟均线): {safe_float(tech['sma_20']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_20'])) / safe_float(tech['sma_20']) * 100:+.2f}%
+    - 80周期({80*base_tf}分钟均线): {safe_float(tech['sma_80']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_80'])) / safe_float(tech['sma_80']) * 100:+.2f}%
 
     🎯 趋势分析:
     - 短期趋势: {trend.get('short_term', 'N/A')}
@@ -564,6 +556,10 @@ def generate_technical_analysis_text(price_data):
     - RSI: {safe_float(tech['rsi_14']):.2f} ({'超买' if safe_float(tech['rsi_14']) > 70 else '超卖' if safe_float(tech['rsi_14']) < 30 else '中性'})
     - MACD: {safe_float(tech['macd']):.4f}
     - 信号线: {safe_float(tech['macd_signal']):.4f}
+
+    📈 其他指数移动平均线:
+    - 20周期({20*base_tf}m): {safe_float(tech['ema_20']):.2f}
+    - 50周期({50*base_tf}m): {safe_float(tech['ema_50']):.2f}
 
     🎚️ 布林带位置: {safe_float(tech['bb_position']):.2%} ({'上部' if safe_float(tech['bb_position']) > 0.7 else '下部' if safe_float(tech['bb_position']) < 0.3 else '中部'})
 
