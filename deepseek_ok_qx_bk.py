@@ -670,6 +670,58 @@ def update_max_positions(current_position):
                 print(f"📉 更新最大亏损持仓: {current_pnl:.2f} USDT, 比例:{current_position['percentage']} (之前: {max_loss_position['unrealized_pnl']:.2f} USDT), 比例:{max_loss_position['percentage']}")
                 max_loss_position = current_position.copy()
 
+def calc_drawdown(current_pos):
+    drawdown_text = ""
+    if current_pos and max_profit_position and max_loss_position:
+        current_pos_id = current_pos.get('posId', '')
+        max_profit_pos_id = max_profit_position.get('posId', '')
+        max_loss_pos_id = max_loss_position.get('posId', '')
+        
+        # 计算盈利状态下的回撤
+        if current_pos_id == max_profit_pos_id and current_pos['unrealized_pnl'] > 0:
+            # 回撤金额 = 历史最大盈利 - 当前盈利
+            drawdown_amount = max_profit_position['unrealized_pnl'] - current_pos['unrealized_pnl']
+            # 回撤比例 = 回撤金额 / 历史最大盈利金额
+            if max_profit_position['unrealized_pnl'] != 0:
+                drawdown_percentage = (drawdown_amount / max_profit_position['unrealized_pnl']) * 100
+                drawdown_text = f" 回撤 {drawdown_amount:.2f} USDT ({drawdown_percentage:.2f}%)"
+        
+        # 计算亏损状态下的回升
+        elif current_pos_id == max_loss_pos_id and current_pos['unrealized_pnl'] < 0:
+            # 回升金额 = 当前亏损 - 历史最大亏损(负负得正，所以是相减)
+            recovery_amount = current_pos['unrealized_pnl'] - max_loss_position['unrealized_pnl']
+            # 回升比例 = 回升金额 / |历史最大亏损金额|
+            if max_loss_position['unrealized_pnl'] != 0:
+                recovery_percentage = (recovery_amount / abs(max_loss_position['unrealized_pnl'])) * 100
+                drawdown_text = f" 从最大亏损回升 {recovery_amount:.2f} USDT ({recovery_percentage:.2f}%)"
+    
+    # 如果只有最大盈利持仓记录
+    elif current_pos and max_profit_position and not max_loss_position:
+        current_pos_id = current_pos.get('posId', '')
+        max_profit_pos_id = max_profit_position.get('posId', '')
+        
+        if current_pos_id == max_profit_pos_id and current_pos['unrealized_pnl'] > 0:
+            # 回撤金额 = 历史最大盈利 - 当前盈利
+            drawdown_amount = max_profit_position['unrealized_pnl'] - current_pos['unrealized_pnl']
+            # 回撤比例 = 回撤金额 / 历史最大盈利金额
+            if max_profit_position['unrealized_pnl'] != 0:
+                drawdown_percentage = (drawdown_amount / max_profit_position['unrealized_pnl']) * 100
+                drawdown_text = f", 回撤: {drawdown_amount:.2f} USDT ({drawdown_percentage:.2f}%)"
+    
+    # 如果只有最大亏损持仓记录
+    elif current_pos and max_loss_position and not max_profit_position:
+        current_pos_id = current_pos.get('posId', '')
+        max_loss_pos_id = max_loss_position.get('posId', '')
+        
+        if current_pos_id == max_loss_pos_id and current_pos['unrealized_pnl'] < 0:
+            # 亏损状态，还未出现盈利，这种情况显示距离最大亏损的改善情况
+            recovery_amount = current_pos['unrealized_pnl'] - max_loss_position['unrealized_pnl']
+            if max_loss_position['unrealized_pnl'] != 0:
+                recovery_percentage = (recovery_amount / abs(max_loss_position['unrealized_pnl'])) * 100
+                drawdown_text = f", 从最大亏损回升: {recovery_amount:.2f} USDT ({recovery_percentage:.2f}%)"
+    
+    return drawdown_text
+
 #使用DeepSeek分析市场并生成交易信号（增强版）
 def analyze_with_deepseek(price_data):
     """使用DeepSeek分析市场并生成交易信号（增强版）"""
@@ -711,6 +763,10 @@ def analyze_with_deepseek(price_data):
 
     # 调用函数更新最大持仓数据
     update_max_positions(current_pos)
+
+    # 计算回撤信息
+    drawdown_text = calc_drawdown(current_pos)
+
     # 构建最大持仓信息文本
     max_profit_text = "无"
     max_loss_text = "无"
@@ -723,6 +779,7 @@ def analyze_with_deepseek(price_data):
     print(f'当前持仓: {position_text}{pnl_text}{margin}{percentage}')
     print(f'历史最大盈利持仓方向: {max_profit_text}')
     print(f'历史最大亏损持仓方向: {max_loss_text}')
+    print(f'回撤数据: {drawdown_text}')
 
     prompt = f"""
 ## 🎯 核心分析哲学
@@ -1077,6 +1134,7 @@ def analyze_with_deepseek(price_data):
     - 当前持仓: {position_text}{pnl_text}{margin}{percentage}
     - 历史最大盈利持仓方向: {max_profit_text}
     - 历史最大亏损持仓方向: {max_loss_text}
+    - 回撤/回升数据: {drawdown_text}
 
     【当前技术状况分析】
     - 整体趋势: {price_data['trend_analysis'].get('overall', 'N/A')}
@@ -1483,7 +1541,7 @@ def main():
     # 循环执行（不使用schedule）
     while True:
         trading_bot()  # 函数内部会自己等待整点
-
+        # time.sleep(10)
 
 
 if __name__ == "__main__":
