@@ -81,7 +81,7 @@ def setup_exchange():
         print(f"✅ 合约规格: 1张 = {contract_size} BTC")
 
         # 设定时间帧（K线间隔）
-        TRADE_CONFIG['timeframe'] = str(int(TRADE_CONFIG['settingTimeframe'])) + 'm'
+        TRADE_CONFIG['timeframe'] = str(TRADE_CONFIG['settingTimeframe']) + 'm'
         # 计算因子 baseTimeFrame / settingTimeframe
         TRADE_CONFIG['factor'] = TRADE_CONFIG['baseTimeFrame'] / TRADE_CONFIG['settingTimeframe']
         # 重设置获取K线数量
@@ -268,8 +268,10 @@ def calculate_technical_indicators(df):
         df['sma_3'] = df['close'].rolling(window=3, min_periods=1).mean()
         df['sma_5'] = df['close'].rolling(window=5, min_periods=1).mean()
         df['sma_10'] = df['close'].rolling(window=10, min_periods=1).mean()
+        df['sma_15'] = df['close'].rolling(window=15, min_periods=1).mean()
         df['sma_20'] = df['close'].rolling(window=20, min_periods=1).mean()
         df['sma_50'] = df['close'].rolling(window=50, min_periods=1).mean()
+        df['sma_80'] = df['close'].rolling(window=80, min_periods=1).mean()
 
         # 指数移动平均线
         df['ema_12'] = df['close'].ewm(span=12).mean()
@@ -493,8 +495,10 @@ def get_btc_ohlcv_enhanced():
                 'sma_3': current_data.get('sma_3', 0),
                 'sma_5': current_data.get('sma_5', 0),
                 'sma_10': current_data.get('sma_10', 0),
+                'sma_15': current_data.get('sma_15', 0),
                 'sma_20': current_data.get('sma_20', 0),
                 'sma_50': current_data.get('sma_50', 0),
+                'sma_80': current_data.get('sma_80', 0),
                 'ema_20': current_data.get('ema_20', 0),
                 'ema_50': current_data.get('ema_50', 0),
                 'rsi_7': current_data.get('rsi_7', 0),
@@ -529,14 +533,18 @@ def generate_technical_analysis_text(price_data):
     def safe_float(value, default=0):
         return float(value) if value and pd.notna(value) else default
 
+    # 真实分钟数
+    base_tf = TRADE_CONFIG['settingTimeframe']
     analysis_text = f"""
     【技术指标分析】
     📈 移动平均线:
-    - 3周期: {safe_float(tech['sma_3']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_3'])) / safe_float(tech['sma_3']) * 100:+.2f}%
-    - 5周期: {safe_float(tech['sma_5']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_5'])) / safe_float(tech['sma_5']) * 100:+.2f}%
-    - 10周期: {safe_float(tech['sma_10']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_10'])) / safe_float(tech['sma_10']) * 100:+.2f}%
-    - 20周期: {safe_float(tech['sma_20']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_20'])) / safe_float(tech['sma_20']) * 100:+.2f}%
-    - 50周期: {safe_float(tech['sma_50']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_50'])) / safe_float(tech['sma_50']) * 100:+.2f}%
+    - 3周期({3*base_tf}m): {safe_float(tech['sma_3']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_3'])) / safe_float(tech['sma_3']) * 100:+.2f}%
+    - 5周期({5*base_tf}m): {safe_float(tech['sma_5']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_5'])) / safe_float(tech['sma_5']) * 100:+.2f}%
+    - 10周期({10*base_tf}m): {safe_float(tech['sma_10']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_10'])) / safe_float(tech['sma_10']) * 100:+.2f}%
+    - 15周期({15*base_tf}m): {safe_float(tech['sma_15']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_15'])) / safe_float(tech['sma_15']) * 100:+.2f}%
+    - 20周期({20*base_tf}m): {safe_float(tech['sma_20']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_20'])) / safe_float(tech['sma_20']) * 100:+.2f}%
+    - 50周期({50*base_tf}m): {safe_float(tech['sma_50']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_50'])) / safe_float(tech['sma_50']) * 100:+.2f}%
+    - 80周期({80*base_tf}m): {safe_float(tech['sma_80']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_80'])) / safe_float(tech['sma_80']) * 100:+.2f}%
 
     🎯 趋势分析:
     - 短期趋势: {trend.get('short_term', 'N/A')}
