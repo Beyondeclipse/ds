@@ -697,20 +697,22 @@ def calc_drawdown(current_pos):
         
         # 计算盈利状态下的回撤
         if current_pos_id == max_profit_pos_id and current_pos['unrealized_pnl'] > 0:
-            # 回撤金额 = 历史最大盈利 - 当前盈利
-            drawdown_amount = max_profit_position['unrealized_pnl'] - current_pos['unrealized_pnl']
+            # 回撤金额 = 历史最大盈利 - 当前盈利（需换算为当前仓位对应金额）
+            max_profit_pul = max_profit_position['unrealized_pnl'] / max_profit_position['size'] * current_pos['size']
+            drawdown_amount = max_profit_pul - current_pos['unrealized_pnl']
             # 回撤比例 = 回撤金额 / 历史最大盈利金额
-            if max_profit_position['unrealized_pnl'] != 0:
-                drawdown_percentage = (drawdown_amount / max_profit_position['unrealized_pnl']) * 100
+            if max_profit_pul != 0:
+                drawdown_percentage = (drawdown_amount / max_profit_pul) * 100
                 drawdown_text = f" 回撤 {drawdown_amount:.2f} USDT ({drawdown_percentage:.2f}%)"
         
         # 计算亏损状态下的回升
         elif current_pos_id == max_loss_pos_id and current_pos['unrealized_pnl'] < 0:
             # 回升金额 = 当前亏损 - 历史最大亏损(负负得正，所以是相减)
-            recovery_amount = current_pos['unrealized_pnl'] - max_loss_position['unrealized_pnl']
+            max_loss_pnl = max_loss_position['unrealized_pnl'] / max_loss_position['size'] * current_pos['size']
+            recovery_amount = current_pos['unrealized_pnl'] - max_loss_pnl
             # 回升比例 = 回升金额 / |历史最大亏损金额|
-            if max_loss_position['unrealized_pnl'] != 0:
-                recovery_percentage = (recovery_amount / abs(max_loss_position['unrealized_pnl'])) * 100
+            if max_loss_pnl != 0:
+                recovery_percentage = (recovery_amount / abs(max_loss_pnl)) * 100
                 drawdown_text = f" 从最大亏损回升 {recovery_amount:.2f} USDT ({recovery_percentage:.2f}%)"
     
     # 如果只有最大盈利持仓记录
