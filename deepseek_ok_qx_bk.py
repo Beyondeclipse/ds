@@ -44,8 +44,9 @@ exchange = ccxt.okx({
 TRADE_CONFIG = {
     'symbol': 'BTC/USDT:USDT',  # OKX的合约符号格式
     'leverage': 10,  # 杠杆倍数,只影响保证金不影响下单价值
+    'sleepTime': 3,         # 轮询休息时间间隔，默认3m
     'baseTimeFrame': 15,    # 默认为15分钟信号线为基准，其他选择将同时扩展数据
-    'settingTimeframe': 3,  # 使用15分钟K线，还可选 5m,3m,1m
+    'settingTimeframe': 1,  # 使用15分钟K线，还可选 5m,3m,1m
     'test_mode': False,     # 测试模式
     'data_points': 96*3,    # 24*3小时数据（96根15分钟K线）
     'kline_num': 20,        # K线数量
@@ -270,8 +271,8 @@ def calculate_technical_indicators(df):
         df['sma_10'] = df['close'].rolling(window=10, min_periods=1).mean()
         df['sma_15'] = df['close'].rolling(window=15, min_periods=1).mean()
         df['sma_20'] = df['close'].rolling(window=20, min_periods=1).mean()
-        df['sma_50'] = df['close'].rolling(window=50, min_periods=1).mean()
-        df['sma_80'] = df['close'].rolling(window=80, min_periods=1).mean()
+        df['sma_60'] = df['close'].rolling(window=60, min_periods=1).mean()
+        df['sma_240'] = df['close'].rolling(window=240, min_periods=1).mean()
 
         # 指数移动平均线
         df['ema_12'] = df['close'].ewm(span=12).mean()
@@ -497,8 +498,8 @@ def get_btc_ohlcv_enhanced():
                 'sma_10': current_data.get('sma_10', 0),
                 'sma_15': current_data.get('sma_15', 0),
                 'sma_20': current_data.get('sma_20', 0),
-                'sma_50': current_data.get('sma_50', 0),
-                'sma_80': current_data.get('sma_80', 0),
+                'sma_60': current_data.get('sma_60', 0),
+                'sma_240': current_data.get('sma_240', 0),
                 'ema_12': current_data.get('ema_12', 0),
                 'ema_20': current_data.get('ema_20', 0),
                 'ema_26': current_data.get('ema_26', 0),
@@ -542,9 +543,9 @@ def generate_technical_analysis_text(price_data):
     📈 移动平均线:
     - 3周期({3*base_tf}分钟均线): {safe_float(tech['sma_3']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_3'])) / safe_float(tech['sma_3']) * 100:+.2f}%
     - 5周期({5*base_tf}分钟均线): {safe_float(tech['sma_5']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_5'])) / safe_float(tech['sma_5']) * 100:+.2f}%
-    - 10周期({10*base_tf}分钟均线): {safe_float(tech['sma_10']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_10'])) / safe_float(tech['sma_10']) * 100:+.2f}%
-    - 20周期({20*base_tf}分钟均线): {safe_float(tech['sma_20']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_20'])) / safe_float(tech['sma_20']) * 100:+.2f}%
-    - 80周期({80*base_tf}分钟均线): {safe_float(tech['sma_80']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_80'])) / safe_float(tech['sma_80']) * 100:+.2f}%
+    - 15周期({15*base_tf}分钟均线): {safe_float(tech['sma_15']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_15'])) / safe_float(tech['sma_15']) * 100:+.2f}%
+    - 60周期({60*base_tf}分钟均线): {safe_float(tech['sma_60']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_60'])) / safe_float(tech['sma_60']) * 100:+.2f}%
+    - 240周期({240*base_tf}分钟均线): {safe_float(tech['sma_240']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_240'])) / safe_float(tech['sma_240']) * 100:+.2f}%
 
     🎯 趋势分析:
     - 短期趋势: {trend.get('short_term', 'N/A')}
@@ -1480,7 +1481,7 @@ def wait_for_next_period():
     current_second = now.second
 
     # 计算下一个整点时间（00, 15, 30, 45分钟）
-    settingMinute = TRADE_CONFIG['settingTimeframe'] 
+    settingMinute = TRADE_CONFIG['sleepTime'] 
     next_period_minute = ((current_minute // settingMinute) + 1) * settingMinute
     if next_period_minute == 60:
         next_period_minute = 0
