@@ -48,7 +48,7 @@ exchange = ccxt.okx({
 
 # 交易参数配置 - 结合两个版本的优点
 TRADE_CONFIG = {
-    'ai_provider': 'deepseek',  # AI提供商选择：'deepseek' 或 'qwen'
+    'ai_provider': 'deepseek',  # AI提供商选择：'deepseek' 或 'qwen','qwen3'
     'symbol': 'BTC/USDT:USDT',  # OKX的合约符号格式
     'leverage': 10,  # 杠杆倍数,只影响保证金不影响下单价值
     'sleepTime': 3,         # 轮询休息时间间隔，默认3m
@@ -1174,7 +1174,7 @@ def analyze_with_deepseek(price_data):
         "stop_loss": 具体价格,
         "take_profit": 具体价格, 
         "confidence": "HIGH|MEDIUM|LOW",
-        "technical_data_suggest"："简要说明对prompt中提供的数据是否足够，欠缺或有冗余（如历史数据是否足够，是否过多导致成本上升等），如数据适中则无需说明"
+        "technical_data_suggest"："判断prompt中提供的数据是否足够，欠缺或有冗余（如历史数据是否足够，是否过多导致成本上升等），如数据适中则无需说明，否则需简要说明"
     }}
     """
 
@@ -1184,7 +1184,7 @@ def analyze_with_deepseek(price_data):
         ai_client = ai_clients[ai_provider]
 
         # 根据不同的AI提供商选择相应的模型
-        model_name = "deepseek-chat" if ai_provider == 'deepseek' else "qwen3-max"
+        model_name = "deepseek-chat" if ai_provider == 'deepseek' else "qwen-max"
 
         response = ai_client.chat.completions.create(
             model= model_name,
@@ -1527,7 +1527,8 @@ def trading_bot():
         time.sleep(wait_seconds)
 
     """主交易机器人函数"""
-    print("\n" + "=" * 60)
+    print("\n")
+    print("=" * 60)
     print(f"执行时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
