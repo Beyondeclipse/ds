@@ -1568,7 +1568,7 @@ def main():
         print("交易所初始化失败，程序退出")
         return
 
-    print(f"执行频率: 每{TRADE_CONFIG['settingTimeframe']}分钟整点执行")
+    print(f"执行频率: 每{TRADE_CONFIG['sleepTime']}分钟整点执行")
 
     # 循环执行（不使用schedule）
     while True:
