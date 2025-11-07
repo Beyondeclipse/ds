@@ -48,7 +48,7 @@ exchange = ccxt.okx({
 
 # 交易参数配置 - 结合两个版本的优点
 TRADE_CONFIG = {
-    'ai_provider': 'deepseek',  # AI提供商选择：'deepseek' 或 'qwen','qwen3'
+    'ai_provider': 'qwen',  # AI提供商选择：'deepseek' 或 'qwen','qwen3'
     'symbol': 'BTC/USDT:USDT',  # OKX的合约符号格式
     'leverage': 10,  # 杠杆倍数,只影响保证金不影响下单价值
     'sleepTime': 3,         # 轮询休息时间间隔，默认3m
@@ -317,6 +317,23 @@ def calculate_technical_indicators(df):
         df['sma_60_volume'] = df['volume'].rolling(window=60, min_periods=1).mean()
         df['volume_ratio'] = df['volume'] / df['sma_20_volume']
 
+        # 买卖压力比（Buy/Sell Pressure Ratio）
+        # 计算价格变化
+        df['price_change'] = df['close'] - df['open']
+        
+        # 计算买方压力：价格上涨时的成交量
+        df['buy_pressure'] = df['volume'].where(df['price_change'] >= 0, 0)
+        # 计算卖方压力：价格下跌时的成交量
+        df['sell_pressure'] = df['volume'].where(df['price_change'] < 0, 0)
+        
+        # 计算买卖压力移动平均（使用14周期）
+        df['buy_pressure_ma_14'] = df['buy_pressure'].rolling(window=14, min_periods=1).mean()
+        df['sell_pressure_ma_14'] = df['sell_pressure'].rolling(window=14, min_periods=1).mean()
+        
+        # 计算买卖压力比
+        df['buy_sell_ratio_14'] = df['buy_pressure_ma_14'] / df['sell_pressure_ma_14'].replace(0, 1)  # 避免除零错误
+       
+
         # 支撑阻力位
         df['resistance'] = df['high'].rolling(20).max()
         df['support'] = df['low'].rolling(20).min()
@@ -525,7 +542,10 @@ def get_btc_ohlcv_enhanced():
                 'sma_3_volume': current_data.get('sma_3_volume', 0),
                 'sma_15_volume': current_data.get('sma_15_volume', 0),
                 'sma_60_volume': current_data.get('sma_60_volume', 0),
-                'volume_ratio': current_data.get('volume_ratio', 0)
+                'volume_ratio': current_data.get('volume_ratio', 0),
+                'buy_pressure_ma_14': current_data.get('buy_pressure_ma_14', 0),
+                'sell_pressure_ma_14': current_data.get('sell_pressure_ma_14', 0),
+                'buy_sell_ratio_14': current_data.get('buy_sell_ratio_14', 0)
             },
             'trend_analysis': trend_analysis,
             'levels_analysis': levels_analysis,
@@ -564,6 +584,11 @@ def generate_technical_analysis_text(price_data):
     - sma_3_volume({3*base_tf}分钟): {safe_float(tech['sma_3_volume']):.2f}
     - sma_15_volume({15*base_tf}分钟): {safe_float(tech['sma_15_volume']):.2f}
     - sma_60_volume({60*base_tf}分钟): {safe_float(tech['sma_60_volume']):.2f}
+    
+    📊 买卖压力移动平均（使用14周期）
+    - buy_pressure_ma_14({14*base_tf}分钟): {safe_float(tech['buy_pressure_ma_14']):.2f}
+    - sell_pressure_ma_14({14*base_tf}分钟): {safe_float(tech['sell_pressure_ma_14']):.2f}
+    - buy_sell_ratio_14({14*base_tf}分钟): {safe_float(tech['buy_sell_ratio_14']):.2f}
     
     🎯 趋势分析:
     - 短期趋势: {trend.get('short_term', 'N/A')}
@@ -1185,7 +1210,7 @@ def analyze_with_deepseek(price_data):
         "stop_loss": 具体价格,
         "take_profit": 具体价格, 
         "confidence": "HIGH|MEDIUM|LOW",
-        "technical_data_suggest"："判断prompt中提供的数据是否足够，欠缺或有冗余（如历史数据是否足够，是否过多导致成本上升等），如数据适中则无需说明，否则需简要说明"
+        "technical_data_suggest"："判断prompt中提供的数据是否足够、欠缺或有冗余（如历史数据是否足够，是否过多导致成本上升等），如数据适中则返回'无'，否则需简要说明"
     }}
     """
 
