@@ -87,7 +87,7 @@ def setup_exchange():
         # 重设置获取K线数量
         TRADE_CONFIG['data_points'] = int(TRADE_CONFIG['data_points'] * TRADE_CONFIG['factor'])
         # 重设置k线数量
-        TRADE_CONFIG['kline_num'] = int(TRADE_CONFIG['data_points'] * TRADE_CONFIG['factor'])
+        TRADE_CONFIG['kline_num'] = int(TRADE_CONFIG['kline_num'] * TRADE_CONFIG['factor'])
 
         # 存储合约规格到全局配置
         TRADE_CONFIG['contract_size'] = contract_size
@@ -460,6 +460,8 @@ def get_btc_ohlcv_enhanced():
 
         df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        # 获取df数据量
+        print(f"获取到K线数据量: {df.shape[0]}")
 
         # 计算技术指标
         df = calculate_technical_indicators(df)
