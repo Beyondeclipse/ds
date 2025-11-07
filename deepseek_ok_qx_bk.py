@@ -1206,6 +1206,8 @@ def analyze_with_deepseek(price_data):
     请用以下JSON格式回复：
     {{
         "signal": "BUY|SELL|HOLD",
+        "action": "做多、做空、平仓、保持(操作中文，与signal表达意思一致)",
+        "action_size": "操作仓位数量",
         "reason": "简要分析理由(包含趋势判断和技术依据)",
         "stop_loss": 具体价格,
         "take_profit": 具体价格, 
