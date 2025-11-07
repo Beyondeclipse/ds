@@ -730,6 +730,11 @@ def update_max_positions(current_position):
 
 def calc_drawdown(current_pos):
     drawdown_text = ""
+    if not current_pos:
+        max_profit_position = None
+        max_loss_position = None
+        return drawdown_text
+    
     if current_pos and max_profit_position and max_loss_position:
         current_pos_id = current_pos.get('posId', '')
         max_profit_pos_id = max_profit_position.get('posId', '')
