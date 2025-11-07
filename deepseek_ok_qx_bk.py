@@ -24,11 +24,17 @@ builtins.print = ts_print
 
 load_dotenv()
 
-# 初始化DeepSeek客户端
-deepseek_client = OpenAI(
-    api_key=os.getenv('DEEPSEEK_API_KEY'),
-    base_url="https://api.deepseek.com"
-)
+# 初始化AI客户端
+ai_clients = {
+    'deepseek': OpenAI(
+        api_key=os.getenv('DEEPSEEK_API_KEY'),
+        base_url="https://api.deepseek.com"
+    ),
+    'qwen': OpenAI(
+        api_key=os.getenv('QWEN_API_KEY'),
+        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"  # 默认为北京地域的模型(免费额度) 如新加坡改成https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    )
+}
 
 # 初始化OKX交易所
 exchange = ccxt.okx({
@@ -42,6 +48,7 @@ exchange = ccxt.okx({
 
 # 交易参数配置 - 结合两个版本的优点
 TRADE_CONFIG = {
+    'ai_provider': 'qwen',  # AI提供商选择：'deepseek' 或 'qwen'
     'symbol': 'BTC/USDT:USDT',  # OKX的合约符号格式
     'leverage': 10,  # 杠杆倍数,只影响保证金不影响下单价值
     'sleepTime': 3,         # 轮询休息时间间隔，默认3m
@@ -1172,8 +1179,15 @@ def analyze_with_deepseek(price_data):
     """
 
     try:
-        response = deepseek_client.chat.completions.create(
-            model="deepseek-chat",
+        # 获取当前选择的AI提供商
+        ai_provider = TRADE_CONFIG['ai_provider']
+        ai_client = ai_clients[ai_provider]
+
+        # 根据不同的AI提供商选择相应的模型
+        model_name = "deepseek-chat" if ai_provider == 'deepseek' else "qwen3-max"
+
+        response = ai_client.chat.completions.create(
+            model= model_name,
             messages=[
                 {"role": "system",
                  "content": f"您是一位专业且成功的交易员，专注于{TRADE_CONFIG['timeframe']}周期趋势分析。请结合K线形态和技术指标做出判断，并严格遵循JSON格式要求。"},
@@ -1185,7 +1199,7 @@ def analyze_with_deepseek(price_data):
 
         # 安全解析JSON
         result = response.choices[0].message.content
-        print(f"DeepSeek原始回复: {result}")
+        print(f"{TRADE_CONFIG['ai_provider']}原始回复: {result}")
 
         # 提取JSON部分
         start_idx = result.find('{')
@@ -1225,7 +1239,7 @@ def analyze_with_deepseek(price_data):
         return signal_data
 
     except Exception as e:
-        print(f"DeepSeek分析失败: {e}")
+        print(f"{TRADE_CONFIG['ai_provider']}分析失败: {e}")
         return create_fallback_signal(price_data)
 
 #执行智能交易 - OKX版本（支持同方向加仓减仓）
