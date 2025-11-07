@@ -183,6 +183,8 @@ def setup_exchange():
 price_history = []
 signal_history = []
 position = None
+max_profit_position = None
+max_loss_position = None
 
 #计算智能仓位大小 - 修复版
 def calculate_intelligent_position(signal_data, price_data, current_position):
@@ -677,8 +679,6 @@ def create_fallback_signal(price_data):
         "is_fallback": True
     }
 
-max_profit_position = None
-max_loss_position = None
 # 计算当前持仓历史盈利最大持仓数据，以及历史亏损最大持仓数据，由当前持仓数据计算
 def update_max_positions(current_position):
     global max_profit_position
