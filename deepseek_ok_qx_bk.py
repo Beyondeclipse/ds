@@ -458,7 +458,7 @@ def get_btc_ohlcv_enhanced():
     try:
         # 获取K线数据
         ohlcv = exchange.fetch_ohlcv(TRADE_CONFIG['symbol'], TRADE_CONFIG['timeframe'],
-                                     limit=TRADE_CONFIG['data_points'])
+                                     limit=TRADE_CONFIG['data_points'], params={'paginate': True})
 
         df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
