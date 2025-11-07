@@ -48,7 +48,7 @@ exchange = ccxt.okx({
 
 # 交易参数配置 - 结合两个版本的优点
 TRADE_CONFIG = {
-    'ai_provider': 'qwen',  # AI提供商选择：'deepseek' 或 'qwen'
+    'ai_provider': 'deepseek',  # AI提供商选择：'deepseek' 或 'qwen'
     'symbol': 'BTC/USDT:USDT',  # OKX的合约符号格式
     'leverage': 10,  # 杠杆倍数,只影响保证金不影响下单价值
     'sleepTime': 3,         # 轮询休息时间间隔，默认3m
