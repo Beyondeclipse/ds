@@ -1203,12 +1203,15 @@ def execute_trade(action, position_size=0, reason=""):
     """
     global position
     
+    if position_size <= 0:
+        print(f"目标仓位为{position_size}，不进行操作")
+        return
+    
     current_position = get_current_position()
     
     print(f"执行交易操作: {action}")
     print(f"操作原因: {reason}")
-    if position_size > 0:
-        print(f"目标仓位: {position_size:.2f} 张")
+    print(f"目标仓位: {position_size:.2f} 张")
     print(f"当前持仓: {current_position}")
     
     if TRADE_CONFIG['test_mode']:
