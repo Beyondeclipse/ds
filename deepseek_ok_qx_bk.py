@@ -1205,9 +1205,9 @@ def analyze_with_deepseek(price_data):
 
     请用以下JSON格式回复：
     {{
-        "signal": "BUY|SELL|HOLD",
-        "action": "做多、做空、平仓、保持(操作中文解析，与signal表达意思一致)",
+        "action": "做多、做空、止盈、止损、平仓、保持(操作中文解析，可多个组合一起，signal表达意思应与其一致)",
         "action_size": "应操作仓位数量，是基于当前持仓情况后的仓位调整数量",
+        "signal": "BUY|SELL|HOLD",
         "reason": "简要分析理由(包含趋势判断和技术依据)",
         "stop_loss": 具体价格,
         "take_profit": 具体价格, 
@@ -1222,7 +1222,7 @@ def analyze_with_deepseek(price_data):
         ai_client = ai_clients[ai_provider]
 
         # 根据不同的AI提供商选择相应的模型
-        model_name = "deepseek-chat" if ai_provider == 'deepseek' else "qwen-max"
+        model_name = "deepseek-chat" if ai_provider == 'deepseek' else "qwen3-max"
 
         response = ai_client.chat.completions.create(
             model= model_name,
