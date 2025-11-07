@@ -546,6 +546,12 @@ def generate_technical_analysis_text(price_data):
     - 50周期({50*base_tf}m): {safe_float(tech['sma_50']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_50'])) / safe_float(tech['sma_50']) * 100:+.2f}%
     - 80周期({80*base_tf}m): {safe_float(tech['sma_80']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_80'])) / safe_float(tech['sma_80']) * 100:+.2f}%
 
+    📈 指数移动平均线:
+    - 12周期({12*base_tf}m): {safe_float(tech['ema_12']):.2f}
+    - 20周期({20*base_tf}m): {safe_float(tech['ema_20']):.2f}
+    - 26周期({26*base_tf}m): {safe_float(tech['ema_26']):.2f}
+    - 50周期({50*base_tf}m): {safe_float(tech['ema_50']):.2f}
+
     🎯 趋势分析:
     - 短期趋势: {trend.get('short_term', 'N/A')}
     - 中期趋势: {trend.get('medium_term', 'N/A')}
