@@ -548,11 +548,11 @@ def generate_technical_analysis_text(price_data):
     analysis_text = f"""
     【技术指标分析】
     📈 移动平均线:
-    - 3周期({3*base_tf}分钟均线): {safe_float(tech['sma_3']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_3'])) / safe_float(tech['sma_3']) * 100:+.2f}%
-    - 5周期({5*base_tf}分钟均线): {safe_float(tech['sma_5']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_5'])) / safe_float(tech['sma_5']) * 100:+.2f}%
-    - 15周期({15*base_tf}分钟均线): {safe_float(tech['sma_15']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_15'])) / safe_float(tech['sma_15']) * 100:+.2f}%
-    - 60周期({60*base_tf}分钟均线): {safe_float(tech['sma_60']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_60'])) / safe_float(tech['sma_60']) * 100:+.2f}%
-    - 240周期({240*base_tf}分钟均线): {safe_float(tech['sma_240']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_240'])) / safe_float(tech['sma_240']) * 100:+.2f}%
+    - sma_3周期({3*base_tf}分钟均线): {safe_float(tech['sma_3']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_3'])) / safe_float(tech['sma_3']) * 100:+.2f}%
+    - sma_5周期({5*base_tf}分钟均线): {safe_float(tech['sma_5']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_5'])) / safe_float(tech['sma_5']) * 100:+.2f}%
+    - sma_15周期({15*base_tf}分钟均线): {safe_float(tech['sma_15']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_15'])) / safe_float(tech['sma_15']) * 100:+.2f}%
+    - sma_60周期({60*base_tf}分钟均线): {safe_float(tech['sma_60']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_60'])) / safe_float(tech['sma_60']) * 100:+.2f}%
+    - sma_240周期({240*base_tf}分钟均线): {safe_float(tech['sma_240']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_240'])) / safe_float(tech['sma_240']) * 100:+.2f}%
 
     🎯 趋势分析:
     - 短期趋势: {trend.get('short_term', 'N/A')}
@@ -566,8 +566,8 @@ def generate_technical_analysis_text(price_data):
     - 信号线: {safe_float(tech['macd_signal']):.4f}
 
     📈 其他指数移动平均线:
-    - 20周期({20*base_tf}m): {safe_float(tech['ema_20']):.2f}
-    - 50周期({50*base_tf}m): {safe_float(tech['ema_50']):.2f}
+    - ema_20周期({20*base_tf}分钟移动均线): {safe_float(tech['ema_20']):.2f}
+    - ema_50周期({50*base_tf}分钟移动均线): {safe_float(tech['ema_50']):.2f}
 
     🎚️ 布林带位置: {safe_float(tech['bb_position']):.2%} ({'上部' if safe_float(tech['bb_position']) > 0.7 else '下部' if safe_float(tech['bb_position']) < 0.3 else '中部'})
 
@@ -1138,7 +1138,7 @@ def analyze_with_deepseek(price_data):
 
 ---
 
-**核心提示**：你拥有完整的技术分析自主权，基于提供的多维数据自由构建交易逻辑。特别注意：震荡行情完全由你自主分析处理，我们不过多干预你的分析判断。 另如有数据缺失或不足请在回复中的"reason"告知
+**核心提示**：你拥有完整的技术分析自主权，基于提供的多维数据自由构建交易逻辑。特别注意：震荡行情完全由你自主分析处理，我们不过多干预你的分析判断。
 
     {kline_text}
 
@@ -1174,7 +1174,7 @@ def analyze_with_deepseek(price_data):
         "stop_loss": 具体价格,
         "take_profit": 具体价格, 
         "confidence": "HIGH|MEDIUM|LOW",
-        "technical_data_suggest"："简要说明对prompt中提供的数据是否足够，欠缺或有冗余（如历史数据是否足够，是否过多导致成本上升等）"
+        "technical_data_suggest"："简要说明对prompt中提供的数据是否足够，欠缺或有冗余（如历史数据是否足够，是否过多导致成本上升等），如数据适中则无需说明"
     }}
     """
 
