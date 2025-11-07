@@ -597,7 +597,7 @@ def get_current_position():
                         'leverage': float(pos['leverage']) if pos['leverage'] else TRADE_CONFIG['leverage'],
                         'symbol': pos['symbol'],
                         'margin': float(pos['initialMargin']) if pos['initialMargin'] else 0,  # 保证金
-                        'percentage': float(pos['percentage'])/100 if pos['percentage'] else 0  # 盈亏比例
+                        'percentage': float(pos['percentage']) if pos['percentage'] else 0  # 盈亏比例
                     }
                     print(f"检测到持仓: {position_info}")  # 添加调试信息
                     return position_info
@@ -671,7 +671,7 @@ def update_max_positions(current_position):
                 print(f"📈 持仓已改变，更新最大盈利持仓: {max_profit_position} ")
             elif current_pnl > max_profit_position['unrealized_pnl']:
                 # posId相同且当前盈利大于历史最大盈利
-                print(f"📈 更新最大盈利持仓: {current_pnl:.2f} USDT, 比例:{current_position['percentage']} (之前: {max_profit_position['unrealized_pnl']:.2f} USDT), 比例:{max_profit_position['percentage']}")
+                print(f"📈 更新最大盈利持仓: {current_pnl:.2f} USDT, 比例:{current_position['percentage']}% (之前: {max_profit_position['unrealized_pnl']:.2f} USDT), 比例:{max_profit_position['percentage']}%")
                 max_profit_position = current_position.copy()
                 
     # 更新最大亏损持仓（仅当当前持仓亏损时）
@@ -689,7 +689,7 @@ def update_max_positions(current_position):
                 print(f"📉 持仓已改变，更新最大亏损持仓: {max_loss_position}")
             elif current_pnl < max_loss_position['unrealized_pnl']:
                 # posId相同且当前亏损小于历史最大亏损(负数更小)
-                print(f"📉 更新最大亏损持仓: {current_pnl:.2f} USDT, 比例:{current_position['percentage']} (之前: {max_loss_position['unrealized_pnl']:.2f} USDT), 比例:{max_loss_position['percentage']}")
+                print(f"📉 更新最大亏损持仓: {current_pnl:.2f} USDT, 比例:{current_position['percentage']}% (之前: {max_loss_position['unrealized_pnl']:.2f} USDT), 比例:{max_loss_position['percentage']}%")
                 max_loss_position = current_position.copy()
 
 def calc_drawdown(current_pos):
@@ -782,8 +782,8 @@ def analyze_with_deepseek(price_data):
     current_pos = get_current_position()
     position_text = "无持仓" if not current_pos else f"{current_pos['side']}仓, 数量: {current_pos['size']}"
     pnl_text = f", 持仓盈亏: {current_pos['unrealized_pnl']} USDT" if current_pos else ""
-    margin = f", 保证金: {current_pos['margin']} USDT" if current_pos else ""
-    percentage = f", 盈亏比例: {current_pos['percentage']}" if current_pos else ""
+    margin_text = f", 保证金: {current_pos['margin']} USDT" if current_pos else ""
+    percentage_text = f", 盈亏比例: {current_pos['percentage']}%" if current_pos else ""
 
     # 调用函数更新最大持仓数据
     update_max_positions(current_pos)
@@ -796,11 +796,11 @@ def analyze_with_deepseek(price_data):
     max_loss_text = "无"
 
     if max_profit_position:
-        max_profit_text = f"{max_profit_position['side']}仓, 数量: {max_profit_position['size']}, 盈亏: {max_profit_position['unrealized_pnl']} USDT, 保证金: {max_profit_position['margin']} USDT, 盈亏比例: {max_profit_position['percentage']}"
+        max_profit_text = f"{max_profit_position['side']}仓, 数量: {max_profit_position['size']}, 保证金: {max_profit_position['margin']} USDT, 盈亏: {max_profit_position['unrealized_pnl']} USDT, 盈亏比例: {max_profit_position['percentage']}%"
 
     if max_loss_position:
-        max_loss_text = f"{max_loss_position['side']}仓, 数量: {max_loss_position['size']}, 盈亏: {max_loss_position['unrealized_pnl']} USDT, 保证金: {max_loss_position['margin']} USDT, 盈亏比例: {max_loss_position['percentage']}%"
-    print(f'当前持仓: {position_text}{pnl_text}{margin}{percentage}')
+        max_loss_text = f"{max_loss_position['side']}仓, 数量: {max_loss_position['size']}, 保证金: {max_loss_position['margin']} USDT, 盈亏: {max_loss_position['unrealized_pnl']} USDT, 盈亏比例: {max_loss_position['percentage']}%"
+    print(f'当前持仓: {position_text}{pnl_text}{margin_text}{percentage_text}')
     print(f'历史最大盈利持仓方向: {max_profit_text}')
     print(f'历史最大亏损持仓方向: {max_loss_text}')
     print(f'回撤数据: {drawdown_text}')
@@ -1155,7 +1155,7 @@ def analyze_with_deepseek(price_data):
     - 本K线最低: ${price_data['low']:,.2f}
     - 本K线成交量: {price_data['volume']:.2f} BTC
     - 价格变化: {price_data['price_change']:+.2f}%
-    - 当前持仓: {position_text}{pnl_text}{margin}{percentage}
+    - 当前持仓: {position_text}{pnl_text}{margin_text}{percentage_text}
     - 历史最大盈利持仓方向: {max_profit_text}
     - 历史最大亏损持仓方向: {max_loss_text}
     - 回撤/回升数据: {drawdown_text}
