@@ -687,6 +687,8 @@ def update_max_positions(current_position):
     """更新最大盈利和最大亏损持仓数据"""    
     # 如果当前无持仓，直接返回
     if not current_position:
+        max_profit_position = None
+        max_loss_position = None
         return
     
     current_pnl = current_position['unrealized_pnl']
@@ -729,6 +731,8 @@ def update_max_positions(current_position):
                 max_loss_position = current_position.copy()
 
 def calc_drawdown(current_pos):
+    global max_profit_position
+    global max_loss_position
     drawdown_text = ""
     if not current_pos:
         max_profit_position = None
