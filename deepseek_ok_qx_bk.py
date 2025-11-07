@@ -54,7 +54,7 @@ TRADE_CONFIG = {
     'sleepTime': 3,         # 轮询休息时间间隔，默认3m
     'baseTimeFrame': 15,    # 默认为15分钟信号线为基准，其他选择将同时扩展数据
     'settingTimeframe': 1,  # 使用15分钟K线，还可选 5m,3m,1m
-    'test_mode': False,     # 测试模式
+    'test_mode': True,     # 测试模式
     'data_points': 96*3,    # 24*3小时数据（96根15分钟K线）
     'kline_num': 20,        # K线数量
     'analysis_periods': {
@@ -311,8 +311,11 @@ def calculate_technical_indicators(df):
         df['bb_position'] = (df['close'] - df['bb_lower']) / (df['bb_upper'] - df['bb_lower'])
 
         # 成交量均线
-        df['volume_ma'] = df['volume'].rolling(20).mean()
-        df['volume_ratio'] = df['volume'] / df['volume_ma']
+        df['sma_3_volume'] = df['volume'].rolling(window=3, min_periods=1).mean()
+        df['sma_15_volume'] = df['volume'].rolling(window=15, min_periods=1).mean()
+        df['sma_20_volume'] = df['volume'].rolling(window=20, min_periods=1).mean()
+        df['sma_60_volume'] = df['volume'].rolling(window=60, min_periods=1).mean()
+        df['volume_ratio'] = df['volume'] / df['sma_20_volume']
 
         # 支撑阻力位
         df['resistance'] = df['high'].rolling(20).max()
@@ -519,6 +522,9 @@ def get_btc_ohlcv_enhanced():
                 'bb_upper': current_data.get('bb_upper', 0),
                 'bb_lower': current_data.get('bb_lower', 0),
                 'bb_position': current_data.get('bb_position', 0),
+                'sma_3_volume': current_data.get('sma_3_volume', 0),
+                'sma_15_volume': current_data.get('sma_15_volume', 0),
+                'sma_60_volume': current_data.get('sma_60_volume', 0),
                 'volume_ratio': current_data.get('volume_ratio', 0)
             },
             'trend_analysis': trend_analysis,
@@ -553,7 +559,12 @@ def generate_technical_analysis_text(price_data):
     - sma_15周期({15*base_tf}分钟均线): {safe_float(tech['sma_15']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_15'])) / safe_float(tech['sma_15']) * 100:+.2f}%
     - sma_60周期({60*base_tf}分钟均线): {safe_float(tech['sma_60']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_60'])) / safe_float(tech['sma_60']) * 100:+.2f}%
     - sma_240周期({240*base_tf}分钟均线): {safe_float(tech['sma_240']):.2f} | 价格相对: {(price_data['price'] - safe_float(tech['sma_240'])) / safe_float(tech['sma_240']) * 100:+.2f}%
-
+    
+    📊 成交量均线
+    - sma_3_volume({3*base_tf}分钟): {safe_float(tech['sma_3_volume']):.2f}
+    - sma_15_volume({15*base_tf}分钟): {safe_float(tech['sma_15_volume']):.2f}
+    - sma_60_volume({60*base_tf}分钟): {safe_float(tech['sma_60_volume']):.2f}
+    
     🎯 趋势分析:
     - 短期趋势: {trend.get('short_term', 'N/A')}
     - 中期趋势: {trend.get('medium_term', 'N/A')}
@@ -781,9 +792,9 @@ def analyze_with_deepseek(price_data):
     # 添加当前持仓信息
     current_pos = get_current_position()
     position_text = "无持仓" if not current_pos else f"{current_pos['side']}仓, 数量: {current_pos['size']}"
-    pnl_text = f", 持仓盈亏: {current_pos['unrealized_pnl']} USDT" if current_pos else ""
+    pnl_text = f", 持仓盈亏: {current_pos['unrealized_pnl']:.3f} USDT" if current_pos else ""
     margin_text = f", 保证金: {current_pos['margin']} USDT" if current_pos else ""
-    percentage_text = f", 盈亏比例: {current_pos['percentage']}%" if current_pos else ""
+    percentage_text = f", 盈亏比例: {current_pos['percentage']:.2f}%" if current_pos else ""
 
     # 调用函数更新最大持仓数据
     update_max_positions(current_pos)
@@ -796,10 +807,10 @@ def analyze_with_deepseek(price_data):
     max_loss_text = "无"
 
     if max_profit_position:
-        max_profit_text = f"{max_profit_position['side']}仓, 数量: {max_profit_position['size']}, 保证金: {max_profit_position['margin']} USDT, 盈亏: {max_profit_position['unrealized_pnl']} USDT, 盈亏比例: {max_profit_position['percentage']}%"
+        max_profit_text = f"{max_profit_position['side']}仓, 数量: {max_profit_position['size']}, 保证金: {max_profit_position['margin']} USDT, 盈亏: {max_profit_position['unrealized_pnl']:.3f} USDT, 盈亏比例: {max_profit_position['percentage']:.2f}%"
 
     if max_loss_position:
-        max_loss_text = f"{max_loss_position['side']}仓, 数量: {max_loss_position['size']}, 保证金: {max_loss_position['margin']} USDT, 盈亏: {max_loss_position['unrealized_pnl']} USDT, 盈亏比例: {max_loss_position['percentage']}%"
+        max_loss_text = f"{max_loss_position['side']}仓, 数量: {max_loss_position['size']}, 保证金: {max_loss_position['margin']} USDT, 盈亏: {max_loss_position['unrealized_pnl']:.3f} USDT, 盈亏比例: {max_loss_position['percentage']:.2f}%"
     print(f'当前持仓: {position_text}{pnl_text}{margin_text}{percentage_text}')
     print(f'历史最大盈利持仓方向: {max_profit_text}')
     print(f'历史最大亏损持仓方向: {max_loss_text}')
@@ -1522,9 +1533,9 @@ def wait_for_next_period():
 
 def trading_bot():
     # 等待到整点再执行
-    wait_seconds = wait_for_next_period()
-    if wait_seconds > 0:
-        time.sleep(wait_seconds)
+    # wait_seconds = wait_for_next_period()
+    # if wait_seconds > 0:
+    #     time.sleep(wait_seconds)
 
     """主交易机器人函数"""
     print("\n")
@@ -1574,7 +1585,7 @@ def main():
     # 循环执行（不使用schedule）
     while True:
         trading_bot()  # 函数内部会自己等待整点
-        # time.sleep(10)
+        time.sleep(10)
 
 
 if __name__ == "__main__":
