@@ -493,7 +493,7 @@ def get_btc_ohlcv_enhanced():
     try:
         # 获取K线数据
         ohlcv = exchange.fetch_ohlcv(TRADE_CONFIG['symbol'], TRADE_CONFIG['timeframe'],
-                                     limit=TRADE_CONFIG['data_points'], params={'paginate': True})
+                                     limit=TRADE_CONFIG['data_points'], params={'paginate': True, 'paginationCalls': 50})
 
         df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
@@ -828,6 +828,36 @@ def analyze_with_deepseek(price_data):
 
     print(sentiment_text)
 
+    # 获取持仓量变化数据
+    try:
+        # 获取市场数据（包括未平仓合约数量）
+        ticker_data = exchange.fetch_ticker(TRADE_CONFIG['symbol'])
+        open_interest = ticker_data.get('openInterest', '未知')  # 未平仓合约数量
+        open_interest_text = f"未平仓合约数量: {open_interest}" if open_interest != '未知' else "未平仓合约数量: 未知"
+    except Exception as e:
+        open_interest_text = "未平仓合约数量: 获取失败"
+        print(f"获取持仓量数据失败: {e}")
+    print(open_interest_text)
+
+    # 尝试获取多空持仓比例数据
+    try:
+        # 通过OKX特定API获取多空持仓比例
+        long_short_ratio = exchange.public_get_rubik_stat_contracts_long_short_account_ratio({
+            'ccy': 'BTC',
+            'period': '5m'
+        })
+        if long_short_ratio and len(long_short_ratio['data']) > 0:
+            latest_data = long_short_ratio['data'][0]
+            long_ratio = float(latest_data[1]) if len(latest_data) > 1 else 0
+            short_ratio = float(latest_data[2]) if len(latest_data) > 2 else 0
+            long_short_text = f"BTC 多空持仓比例: 多头 {long_ratio:.2f} 空头 {short_ratio:.2f}"
+        else:
+            long_short_text = "多空持仓比例: 未知"
+    except Exception as e:
+        long_short_text = "多空持仓比例: 获取失败"
+        print(f"获取多空持仓比例失败: {e}")
+    print(long_short_text)
+
     # 添加当前持仓信息
     current_pos = get_current_position()
     position_text = "无持仓" if not current_pos else f"{current_pos['side']}仓, 数量: {current_pos['size']}"
@@ -879,7 +909,7 @@ def analyze_with_deepseek(price_data):
 
     {signal_text}
 
-    {sentiment_text}  # 添加情绪分析
+    {sentiment_text}
 
     【当前行情】
     - 当前价格: ${price_data['price']:,.2f}
