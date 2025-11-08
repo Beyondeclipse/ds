@@ -893,7 +893,7 @@ def analyze_with_deepseek(price_data):
     请用以下JSON格式回复：
     {{
         "action": "做多、做空、止盈、止损、平仓、保持(操作中文解析，可多个组合一起，signal表达意思应与其一致)",
-        "action_size": "应操作仓位数量，是基于当前持仓情况后的仓位调整数量",
+        "action_size": 应操作仓位数量，是基于当前持仓情况后的仓位调整数量，不确定则默认为0,
         "signal": "BUY|SELL|TAKE_PROFIT|STOP_LOSS|CLOSE|HOLD",
         "reason": "简要分析理由(包含趋势判断和技术依据)",
         "stop_loss": 具体价格,
@@ -1537,8 +1537,7 @@ def trading_bot():
 
     # 3. 执行智能交易
     # execute_intelligent_trade(signal_data, price_data)
-    action_size = 0 if not signal_data['action_size'].isdigit() else int(signal_data['action_size'])
-    execute_trade(signal_data['signal'], action_size, signal_data['reason'])
+    execute_trade(signal_data['signal'], signal_data['action_size'], signal_data['reason'])
 
 
 def main():
