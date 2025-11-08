@@ -88,6 +88,11 @@ def setup_exchange():
         contract_size = float(btc_market['contractSize'])
         print(f"✅ 合约规格: 1张 = {contract_size} BTC")
 
+        # 获取资金费率信息
+        funding_rate_data = exchange.fetch_funding_rate(TRADE_CONFIG['symbol'])
+        fundingRate = funding_rate_data['fundingRate']
+        TRADE_CONFIG['funding_rate'] = fundingRate
+
         # 设定时间帧（K线间隔）
         TRADE_CONFIG['timeframe'] = str(TRADE_CONFIG['settingTimeframe']) + 'm'
         # 计算因子 baseTimeFrame / settingTimeframe
@@ -861,7 +866,12 @@ def analyze_with_deepseek(price_data):
         raise FileNotFoundError(f"未找到{promptFile}文件")
 
     prompt = f"""
-{adaptive_prompt}
+    {adaptive_prompt}
+
+    【当前基本交易信息】
+    - 交易合约模式: {TRADE_CONFIG['symbol']}
+    - 采用周期时间线: {TRADE_CONFIG['timeframe']}
+    - 资金费率: {TRADE_CONFIG['funding_rate']}
 
     {kline_text}
 
