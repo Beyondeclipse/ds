@@ -885,6 +885,18 @@ def analyze_with_deepseek(price_data):
     print(f'历史最大亏损持仓方向: {max_loss_text}')
     print(f'回撤数据: {drawdown_text}')
 
+    #获取当前账户余额
+    balance = exchange.fetch_balance()
+    usdt_balance = balance['USDT']['free']
+    print(f"💰 当前USDT余额: {usdt_balance:.2f}")
+
+    #合约规格到全局配置
+    contract_size = TRADE_CONFIG['contract_size']
+    print(f"合约规格: 1张 = {contract_size} BTC")
+
+    #当前账户最大可买合约张数
+    user_max_contract_size = (usdt_balance) / (price_data['price'] * TRADE_CONFIG['contract_size'])
+    print(f"账户最大可买合约张数: {user_max_contract_size:.6f} 张")
 
     # 读取adaptive.txt文件内容
     try:
@@ -914,6 +926,9 @@ def analyze_with_deepseek(price_data):
     【当前行情】
     - 当前价格: ${price_data['price']:,.2f}
     - 时间: {price_data['timestamp']}
+    - 当前USDT余额: ${usdt_balance:.2f}
+    - 合约规格: 1张 = {contract_size} BTC
+    - 账户最大可买合约张数: {user_max_contract_size:.6f} 张
     - 本K线最高: ${price_data['high']:,.2f}
     - 本K线最低: ${price_data['low']:,.2f}
     - 本K线成交量: {price_data['volume']:.2f} BTC
