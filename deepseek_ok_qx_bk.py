@@ -297,6 +297,16 @@ def calculate_technical_indicators(df):
         df['macd_signal'] = df['macd'].ewm(span=9).mean()
         df['macd_histogram'] = df['macd'] - df['macd_signal']
 
+        # 不同时间周期的MACD计算
+        # 15分钟MACD (标准参数: 12, 26, 9)
+        df['macd_15m'] = df['macd']
+        df['macd_15m_signal'] = df['macd_signal']
+        df['macd_15m_histogram'] = df['macd_histogram']
+        # 1小时MACD (相当于4个15分钟周期: 12*4=48, 26*4=104, 9*4=36)
+        df['macd_1h'] = df['close'].ewm(span=48).mean() - df['close'].ewm(span=104).mean()
+        # 4小时MACD (相当于16个15分钟周期: 12*16=192, 26*16=416, 9*16=144)
+        df['macd_4h'] = df['close'].ewm(span=192).mean() - df['close'].ewm(span=416).mean()
+        
         # 相对强弱指数 (RSI)
         delta = df['close'].diff()
 
@@ -543,6 +553,11 @@ def get_btc_ohlcv_enhanced():
                 'macd': current_data.get('macd', 0),
                 'macd_signal': current_data.get('macd_signal', 0),
                 'macd_histogram': current_data.get('macd_histogram', 0),
+                'macd_15m': current_data.get('macd_15m', 0),
+                'macd_15m_signal': current_data.get('macd_15m_signal', 0),
+                'macd_15m_histogram': current_data.get('macd_15m_histogram', 0),
+                'macd_1h': current_data.get('macd_1h', 0),
+                'macd_4h': current_data.get('macd_4h', 0),
                 'bb_upper': current_data.get('bb_upper', 0),
                 'bb_lower': current_data.get('bb_lower', 0),
                 'bb_position': current_data.get('bb_position', 0),
@@ -601,12 +616,17 @@ def generate_technical_analysis_text(price_data):
     - 短期趋势: {trend.get('short_term', 'N/A')}
     - 中期趋势: {trend.get('medium_term', 'N/A')}
     - 整体趋势: {trend.get('overall', 'N/A')}
-    - MACD方向: {trend.get('macd', 'N/A')}
+    - MACD方向: {trend.get('macd_15m', 'N/A')}
 
     📊 动量指标:
     - RSI: {safe_float(tech['rsi_14']):.2f} ({'超买' if safe_float(tech['rsi_14']) > 70 else '超卖' if safe_float(tech['rsi_14']) < 30 else '中性'})
-    - MACD: {safe_float(tech['macd']):.4f}
-    - 信号线: {safe_float(tech['macd_signal']):.4f}
+    - MACD: {safe_float(tech['macd_15m']):.4f}
+    - 信号线: {safe_float(tech['macd_15m_signal']):.4f}
+
+    📊 不同时间周期的MACD
+    - MACD_15m: {safe_float(tech['macd_15m']):.4f}
+    - MACD_1h: {safe_float(tech['macd_1h']):.4f}
+    - MACD_4h: {safe_float(tech['macd_4h']):.4f}
 
     📈 其他指数移动平均线:
     - ema_20周期({20*base_tf}分钟移动均线): {safe_float(tech['ema_20']):.2f}
@@ -900,7 +920,7 @@ def analyze_with_deepseek(price_data):
 
     # 读取adaptive.txt文件内容
     try:
-        promptFile = 'prompt/adaptive_relaxed.txt'
+        promptFile = 'prompt/default.txt'
         with open(promptFile, 'r', encoding='utf-8') as f:
             adaptive_prompt = f.read()
     except FileNotFoundError:
