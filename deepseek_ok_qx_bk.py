@@ -733,7 +733,7 @@ def update_max_positions(current_position):
 def calc_drawdown(current_pos):
     global max_profit_position
     global max_loss_position
-    drawdown_text = ""
+    drawdown_text = "无"
     if not current_pos:
         max_profit_position = None
         max_loss_position = None
@@ -890,7 +890,7 @@ def analyze_with_deepseek(price_data):
     - MACD方向: {price_data['trend_analysis'].get('macd', 'N/A')}
    
 
-    请用以下JSON格式回复：
+    必须通过以下JSON格式回复：
     {{
         "action": "做多、做空、止盈、止损、平仓、保持(操作中文解析，可多个组合一起，signal表达意思应与其一致)",
         "action_size": 应操作仓位数量，是基于当前持仓情况后的仓位调整数量，不确定则默认为0,
@@ -1537,7 +1537,13 @@ def trading_bot():
 
     # 3. 执行智能交易
     # execute_intelligent_trade(signal_data, price_data)
-    execute_trade(signal_data['signal'], signal_data['action_size'], signal_data['reason'])
+    signal = signal_data['signal'] if signal_data.get('signal') else 'HOLD'
+    action_size_str = signal_data.get('action_size')
+    if action_size_str is not None and (str(action_size_str).isdigit() or (str(action_size_str).startswith('-') and str(action_size_str)[1:].isdigit())):
+        action_size = int(action_size_str)
+    else:
+        action_size = 0
+    execute_trade(signal, action_size, signal_data['reason'])
 
 
 def main():
