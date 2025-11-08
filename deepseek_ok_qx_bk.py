@@ -1537,7 +1537,8 @@ def trading_bot():
 
     # 3. 执行智能交易
     # execute_intelligent_trade(signal_data, price_data)
-    execute_trade(signal_data['signal'], signal_data['action_size'], signal_data['reason'])
+    action_size = 0 if not signal_data['action_size'].isdigit() else int(signal_data['action_size'])
+    execute_trade(signal_data['signal'], action_size, signal_data['reason'])
 
 
 def main():
